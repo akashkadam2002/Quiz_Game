@@ -8,18 +8,15 @@
     padding: 3em 4em;
     gap: 1em;
 }
-
 .container .flex{
     display: flex;
     justify-content: space-between;
     
 }
-
 .container .flex span {
     font-size: 1.4em;
     color: #cecece;
 }
-
 .container .flex span.achive {
     font-weight: bold;
     color: #ff2a66;

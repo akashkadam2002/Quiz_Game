@@ -2,13 +2,11 @@
     font-size: 1.4em;
     color: #cecece;
 }
-
 .start{
     display: flex;
     justify-content: center;
     padding-top: 2em;
 }
-
 .start .btn{
     padding: .2em 1.7em;
     border: none;

@@ -47,14 +47,6 @@ body, html{
     padding: 3em;
 }
 
-/* 
-.container .questions .qid{
-  padding: .2em .7em;
-  color: #222222;
-  background-color: #0DFF92;
-  border-radius: 50px;
-} */
-
 .container .grid{
     margin-top: 3em;
     display: grid;
