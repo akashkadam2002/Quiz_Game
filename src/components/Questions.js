@@ -1,58 +1,108 @@
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import data from '../database/data';
 
+export default function Questions({ userId }) {
+    const questions = data.flatMap(item => item.questions);
 
-/** Custom Hook */
-import { useFetchQestion } from '../hooks/FetchQuestion'
-import { updateResult } from '../hooks/setResult'
+    const [selectedOptions, setSelectedOptions] = useState(Array(questions.length).fill(undefined));
+    const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
+    const [answeredQuestions, setAnsweredQuestions] = useState(Array(questions.length).fill(false));
+    const [currentIndex, setCurrentIndex] = useState(0);
 
+    const navigate = useNavigate();
 
-export default function Questions({ onChecked }) {
+    const currentQuestion = questions[currentIndex] || {};
+    const { description, options, id } = currentQuestion;
 
-    const [checked, setChecked] = useState(undefined)
-    const { trace } = useSelector(state => state.questions);
-    const result = useSelector(state => state.result.result);
-    const [{ isLoading, apiData, serverError}] = useFetchQestion() 
+    const correctAnswerIndex = options?.findIndex(option => option.is_correct);
 
-    const questions = useSelector(state => state.questions.queue[state.questions.trace])
-    const dispatch = useDispatch()
+    function onSelect(optionIndex) {
+        const updatedSelectedOptions = [...selectedOptions];
+        updatedSelectedOptions[currentIndex] = optionIndex;
+        setSelectedOptions(updatedSelectedOptions);
 
-    useEffect(() => {
-        dispatch(updateResult({ trace, checked}))
-    }, [checked])
-    
-    function onSelect(i){
-        onChecked(i)
-        setChecked(i)
-        dispatch(updateResult({ trace, checked}))
+        const isCorrect = optionIndex === correctAnswerIndex;
+        const prevSelectedOption = selectedOptions[currentIndex];
+
+        if (isCorrect && prevSelectedOption !== correctAnswerIndex) {
+            setCorrectAnswersCount(prevCount => prevCount + 1);
+        } else if (!isCorrect && prevSelectedOption === correctAnswerIndex) {
+            setCorrectAnswersCount(prevCount => prevCount - 1);
+        }
+
+        setAnsweredQuestions(prevAnswered => {
+            const updatedAnswered = [...prevAnswered];
+            updatedAnswered[currentIndex] = true;
+            return updatedAnswered;
+        });
     }
 
+    function nextQuestion() {
+        if (currentIndex < questions.length - 1) {
+            setCurrentIndex(prevIndex => prevIndex + 1);
+        } else {
+            navigate('/result', {
+                state: {
+                    selectedOptions,
+                    userId,
+                    questions,
+                    correctAnswersCount,
+                    totalQuestions: questions.length,
+                },
+            });
+        }
+    }
 
-    if(isLoading) return <h3 className='text-light'>isLoading</h3>
-    if(serverError) return <h3 className='text-light'>{serverError || "Unknown Error"}</h3>
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            setCurrentIndex(prevIndex => prevIndex - 1);
+        }
+    }
 
-  return (
-    <div className='questions'>
-        <h2 className='text-light'>{questions?.question}</h2>
+    return (
+        <div className='questions'>
+            {currentQuestion ? (
+                <div key={id} className="question-container">
+                    <h2 className='text-light'>{description}</h2>
 
-        <ul key={questions?.id}>
-            {
-                questions?.options.map((q, i) => (
-                    <li key={i}>
-                        <input 
-                            type="radio"
-                            value={false}
-                            name="options"
-                            id={`q${i}-option`}
-                            onChange={() => onSelect(i)}
-                        />
+                    <ul>
+                        {options?.map((option, index) => (
+                            <li key={option.id}>
+                                <input
+                                    type="radio"
+                                    name={`question-${id}`}
+                                    id={`q${id}-option-${index}`}
+                                    checked={selectedOptions[currentIndex] === index}
+                                    onChange={() => onSelect(index)}
+                                />
+                                <label className='text-primary' htmlFor={`q${id}-option-${index}`}>
+                                    {option.description}
+                                </label>
+                                {selectedOptions[currentIndex] === index && <div className="check checked"></div>}
+                            </li>
+                        ))}
+                    </ul>
 
-                        <label className='text-primary' htmlFor={`q${i}-option`}>{q}</label>
-                        <div className={`check ${result[trace] == i ? 'checked' : ''}`}></div>
-                    </li>
-                ))
-            }
-        </ul>
-    </div>
-  )
+                    <div className="navigation-buttons grid">
+                        <button className='btn prev' onClick={prevQuestion} disabled={currentIndex === 0}>
+                            Prev
+                        </button>
+
+                        {currentIndex === questions.length - 1 ? (
+                            <button className='btn next' style={{ background: '#608fd9' }} onClick={nextQuestion}>
+                                Submit
+                            </button>
+                        ) : (
+                            <button className='btn next' onClick={nextQuestion} disabled={currentIndex === questions.length - 1}>
+                                Next
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <p>No questions available</p>
+            )}
+        </div>
+    );
 }
